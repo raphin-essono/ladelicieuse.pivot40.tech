@@ -1,0 +1,15 @@
+# Force LF line endings for all text files (cross-platform compatibility)
+* text=auto eol=lf
+
+# Explicitly binary — no conversion
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.webp binary
+*.gif  binary
+*.ico  binary
+*.pdf  binary
+*.woff binary
+*.woff2 binary
+*.ttf  binary
+*.eot  binary

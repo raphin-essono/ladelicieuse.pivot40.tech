@@ -1,0 +1,73 @@
+import mongoose, { Schema, Document, Types } from 'mongoose';
+
+export type StockLevel = 'rupture' | 'critique' | 'faible' | 'normal';
+
+export interface IIngredient extends Document {
+  nom: string;
+  categorie: string;
+  unite: 'portion' | 'pièce' | 'litre' | 'kg' | 'g';
+  stock: number;
+  stockMin: number;
+  stockOptimal: number;
+  prixAchat: number;
+  prixVente: number;
+  image: string;
+  nutrition: {
+    calories: number;
+    proteines: number;
+    glucides: number;
+    lipides: number;
+    fibres: number;
+  };
+  fournisseurId?: Types.ObjectId;
+  actif: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  stockLevel: StockLevel;
+}
+
+const IngredientSchema = new Schema<IIngredient>(
+  {
+    nom:          { type: String, required: true, trim: true },
+    categorie:    { type: String, required: true },
+    image:        { type: String, default: '' },
+    unite:        { type: String, enum: ['portion', 'pièce', 'litre', 'kg', 'g'], default: 'portion' },
+    stock:        { type: Number, required: true, min: 0, default: 0 },
+    stockMin:     { type: Number, required: true, min: 0, default: 5 },
+    stockOptimal: { type: Number, required: true, min: 0, default: 20 },
+    prixAchat:    { type: Number, required: true, min: 0 },
+    prixVente:    { type: Number, required: true, min: 0 },
+    nutrition: {
+      calories:  { type: Number, default: 0 },
+      proteines: { type: Number, default: 0 },
+      glucides:  { type: Number, default: 0 },
+      lipides:   { type: Number, default: 0 },
+      fibres:    { type: Number, default: 0 },
+    },
+    fournisseurId: { type: Schema.Types.ObjectId, ref: 'Supplier', default: null },
+    actif:         { type: Boolean, default: true },
+  },
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
+);
+
+IngredientSchema.virtual('stockLevel').get(function (this: IIngredient): StockLevel {
+  if (this.stock <= 0)                       return 'rupture';
+  if (this.stock <= this.stockMin * 0.5)    return 'critique';
+  if (this.stock <= this.stockMin)           return 'faible';
+  return 'normal';
+});
+
+IngredientSchema.virtual('margePercent').get(function (this: IIngredient): number {
+  if (!this.prixVente) return 0;
+  return Math.round(((this.prixVente - this.prixAchat) / this.prixVente) * 100);
+});
+
+IngredientSchema.index({ categorie: 1 });
+IngredientSchema.index({ actif: 1 });
+IngredientSchema.index({ stock: 1 });
+
+export default mongoose.model<IIngredient>('Ingredient', IngredientSchema);
